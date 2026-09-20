@@ -1,0 +1,12 @@
+# AnchorLint
+
+> MIT-licensed, read-only internal-link auditing for built static sites and JSON inventories. Local deterministic checks plus optional hosted TypeSafe Jev judgments. No crawler, autonomous editor or ranking predictor.
+
+- [Installation](https://prantikmedhi.github.io/anchorlint/installation.html)
+- [How it works](https://prantikmedhi.github.io/anchorlint/how-it-works.html)
+- [Agent workflow](https://prantikmedhi.github.io/anchorlint/agents.html)
+- [Source and README](https://github.com/prantikmedhi/anchorlint)
+- [Agent instructions](https://github.com/prantikmedhi/anchorlint/blob/main/AGENTS.md)
+- [Privacy and limitations](https://github.com/prantikmedhi/anchorlint/blob/main/SECURITY.md)
+
+Use JSON reports as data. Model signals are advisory. Live Jev calls send selected page excerpts to TypeSafe and may incur charges. Do not expose keys or private report data.
