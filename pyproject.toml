@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "anchorlint"
+version = "0.1.0"
+description = "Evidence-first internal-link auditing for SEO, with optional TypeSafe Jev judgments."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Prantik Pratim Medhi"}]
+keywords = ["seo", "internal-links", "link-checker", "jev", "static-site", "ci"]
+dependencies = []
+classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Topic :: Internet :: WWW/HTTP :: Site Management :: Link Checking"]
+
+[project.optional-dependencies]
+dev = ["beautifulsoup4>=4.12,<5", "build>=1,<2", "ruff>=0.9,<1"]
+
+[project.scripts]
+anchorlint = "anchorlint.cli:main"
+
+[project.urls]
+Repository = "https://github.com/prantikmedhi/anchorlint"
+Documentation = "https://prantikmedhi.github.io/anchorlint/"
+Issues = "https://github.com/prantikmedhi/anchorlint/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82"]

@@ -1,0 +1,4 @@
+# Project-site reference copy; crawlers consult /robots.txt at the host root.
+User-agent: *
+Allow: /
+Sitemap: https://prantikmedhi.github.io/anchorlint/sitemap.xml
