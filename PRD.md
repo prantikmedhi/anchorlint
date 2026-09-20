@@ -1,0 +1,49 @@
+# AnchorLint — product and implementation contract
+
+## Product
+An MIT-licensed, read-only CLI for developers, technical SEOs and documentation maintainers. It checks whether internal links work and whether their visible anchor text promises what the destination actually provides. It produces inspectable evidence, not generated prose or ranking predictions.
+
+## Required working scope
+Python 3.11+, installable package named anchorlint, CLI `anchorlint`, version 0.1.0. Prefer stdlib plus a proven HTML parser if needed. No database, accounts, hosted backend, browser automation, automatic content changes or search scraping. Default mode is fully deterministic and offline over a built static HTML directory. Explicit Jev mode sends only selected source context and destination text to the official API. Ship optional live public-site collection as `crawl` ONLY if secure and fully tested; local static audit and canonical JSON inventory import are required and sufficient.
+
+### Input and extraction
+- `anchorlint audit PATH --base-url https://example.com --format json|markdown|html [--output FILE] [--provider rules|jev] [--baseline FILE] [--fail-on error|warning|never] [--max-links N] [--model MODEL]`.
+- PATH accepts a built HTML directory or validated JSON inventory file. Directory traversal must be explicit-root only; reject symlinks escaping the root, do not follow directory symlinks, exclude .git, .env and common dependency folders. Never scan arbitrary user-home directories.
+- HTML extraction captures URL, title, headings, visible body text, ID/name fragment targets and each link occurrence (href, exact rendered anchor text including nested spans/image alt, enclosing paragraph/list/sentence context, source file and line if available). Exclude scripts/styles/templates and hidden text from semantic state. Preserve extracted wording; never invent quotes.
+- Resolve relative URLs, root paths and ../ safely; map index.html and trailing-slash URLs consistently. Strip query/fragment for file identity but retain original href for evidence. Support percent-encoded paths/fragments. Honor canonical/base elements only under an explicit documented conservative policy. Classify external, mailto, tel, javascript, same-page and unsupported schemes. Never fetch a URL in local audit.
+- Internal unresolved target is a broken link, missing fragment is a separate rule; detect empty/generic anchors and conflicting link destination labels. Noindex/robots metadata should be reported as deterministic evidence, not imaginary ranking measurements. Do not conflate semantic issues with accessibility compliance.
+- A versioned inventory JSON schema and example are part of the deliverable. Bad/duplicate records, missing fields, wrong types and excessive inputs fail clearly before paid calls; zero scanned pages is not success.
+
+### Jev integration
+Use the documented HTTP endpoint `POST https://api.typesafe.ai/v1/systemone`, Bearer TYPESAFE_API_KEY, JSON body {model,state,questions}. Default pinned model `jev-1.13.0`, configurable via --model. Never send this key to another host, never log it or include it in output. No fallback to an unrelated model/proxy. Request only public/user-authorized text. No key needed for rules mode and tests.
+For each distinct eligible link context/destination pair, ask independent atomic questions in one request:
+1. Noul: does the destination satisfy the concrete promise in the anchor within the source context? criteria true/false, values 0..1.
+2. Noul: is the destination relevant to the source paragraph's immediate topic?
+3. Choice: informative | generic | misleading | insufficient_context, with explicit criteria. Choice confidence and full distribution preserved.
+Question fields are `type`, `instructions`, `criteria`; Choice criteria is a mapping, Noul criteria true/false mapping. Noul has NO separate confidence. Do not invent reasoning text. Code owns thresholds and message templates. All low-confidence, missing/too-short target or generic evidence goes to review/insufficient evidence, not clean pass. If anchor and context question signals conflict, flag review. Defaults are conservative product heuristics, explicitly NOT empirically calibrated SEO thresholds.
+Requests and output bounded: max distinct model calls default 25 with --max-links hard positive cap (no unbounded option); skipped links labeled not_evaluated/budget rather than passed. Bound each text field explicitly and record truncation and original length; do not say whole page evaluated if truncated. Use in-run memoization only or safe opt-in local cache keyed by model+prompt+input. Record requested/resolved model, actual response usage input_tokens/output_tokens, call count, duration; no fixed speed or cost claims.
+Validate response strictly: matching answer IDs/types, finite numbers (reject bool, NaN and infinity), ranges 0..1, Choice labels in supplied criteria, complete probability map summing near 1, confidence finite. Missing/malformed/HTTP/timeout/rate-limit responses yield a sanitized explicit error/partial report and operational failure exit, never a false pass. Respect bounded retry and Retry-After for 429/529/5xx, no auth retry, disable redirects to protect Authorization, total retry count/time bounded. No raw exception or response bodies in reports.
+
+### Reports and CI contract
+JSON schema_version, tool version, provider/mode, completeness, coverage counts (pages/links/rules/semantic evaluated/not_evaluated/errors), findings with stable fingerprint, rule, severity, source URL, target URL, original href/anchor/context, evidence source, and model signal provenance where applicable. Stable fingerprints include source+destination+rule+occurrence/context so repeated findings don't collapse. Model changes/wording changes may require baseline refresh; document it.
+Markdown and standalone HTML reports safely escape all untrusted text, including URLs. Never make javascript/data links clickable. No remote report scripts/fonts/analytics. HTML should be readable/responsive with accessible headings/table; all extracted/model text is data.
+Baseline JSON suppresses unchanged findings only; new findings still fail according to --fail-on. A baseline must never suppress runtime errors/incomplete semantic coverage. Define exit codes: 0 requested checks completed without configured new severity; 1 findings gate; 2 invalid input/provider/runtime failure or incomplete paid coverage. Deliberate max-links coverage is explicit and documented (prefer exit 2 if incomplete). Output report even on partial provider failure. JSON stdout remains machine-readable; diagnostics to stderr.
+
+### Distribution, documentation and discoverability
+- README with compact original SVG diagram/banner, honest feature/status matrix, exact install command from GitHub release/source (do not claim PyPI publication), rules-first 60-second quickstart, actual example output labeled demonstration, verified command reference, Jev privacy/cost opt-in, constraints and comparison.
+- PRD.md and ARCHITECTURE.md; AGENTS.md canonical contributor contract, CLAUDE.md points to it; docs/agent-guide.md with runnable shell/JSON workflow for Claude Code, Codex and generic agents. Optional skills/anchorlint/SKILL.md teaching the existing CLI (not claiming an MCP server). No automatic agent config edits.
+- docs/installation.md (macOS/Linux/Windows Python/uv), docs/jev.md (API, three primitives, difference from text models, closed hosted model vs MIT tool), docs/ci.md, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md and small demonstration HTML fixtures.
+- Search-friendly static docs site under `site/`: substantive index, installation and how-it-works pages with unique title/meta, canonical paths based on https://prantikmedhi.github.io/anchorlint/, robots.txt, sitemap.xml, llms.txt, valid SoftwareSourceCode JSON-LD (no fake reviews/rating/price), no keyword spam. No claim the site is deployed until verified. Keep CSS minimal editorial, no cards/dashboard fluff.
+- GitHub CI tests on Python 3.11 and 3.13, lint, package build, install wheel in clean env and run CLI help plus offline fixture audit and report export. Tests must not access real credentials or networks. Build wheel/sdist as downloadable artifacts. Site/link consistency check. GitHub Pages workflow available only on main/explicit dispatch, not PR code with secrets. Least privilege permissions.
+- All work in cloud VM. Test-driven vertical slices: write one failing behavior test, run and record RED, implement minimum, run GREEN, then next behavior. Include tests for extraction, fragments, normalization, escaping, hostile HTML, malformed JSON/API responses, rate limiting, auth redaction, budget, baseline, exit codes and wheel install. Tests may use explicitly labeled doubles for provider contract only, not pretend live Jev results.
+- Do not merge PR or claim performance/ranking improvements. Open implementation PR with actual commands/output and known limitations. No stub commands, TODO implementations or mock network output masquerading as a real product.
+
+## Verified primary references
+Official docs read 2026-09-20:
+https://docs.typesafe.ai/introduction.md
+https://docs.typesafe.ai/api.md
+https://docs.typesafe.ai/models.md
+https://docs.typesafe.ai/confidence.md
+https://docs.typesafe.ai/model-jaggedness/jev-1.13.md
+https://github.com/typesafe-ai/typesafe-sdk-python (SDK MIT, not proof model weights are open)
+Competitors to compare accurately: https://github.com/trendbender/linkrank (graph/cannibalization), https://github.com/filippodanesi/seolinkr (generative insertion), https://github.com/AkashPriyadarshii/jev-seo (broad SEO CLI), https://github.com/avgon/jev-seo-geo (brand/content heuristic library). Differentiation is a product focus, not a claim of unique invention. Jev judgments can be wrong, even when typed and high confidence.
